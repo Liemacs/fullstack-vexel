@@ -84,14 +84,15 @@ export function CharacterProfile({ member }) {
             <p className="mt-4 font-lore text-sm leading-7 text-stone-400">{member.character}</p>
           </Panel>
 
-          <Panel seed={`profile-${member.slug}-connections`}>
-            <h2 className="font-display text-3xl uppercase text-stone-100">Связи</h2>
+          <Panel seed={`profile-${member.slug}-position`}>
+            <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
             <div className="mt-5 grid gap-2">
-              {member.connections.map((connection) => (
-                <div key={connection} className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
-                  {connection}
-                </div>
-              ))}
+              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
+                {member.role}
+              </div>
+              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
+                {member.specialization}
+              </div>
             </div>
           </Panel>
         </div>

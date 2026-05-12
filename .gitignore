@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.npm-cache/
+
+web/node_modules/
+web/dist/
+web/.npm-cache/
+
+backend/vendor/
+backend/storage/*.key
+backend/storage/framework/cache/data/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/storage/logs/
+backend/database/database.sqlite
+
+.DS_Store

@@ -92,6 +92,7 @@ class VexelController extends Controller
             TimelineEvent::query()
                 ->with('chapters')
                 ->orderBy('sort_order')
+                ->orderBy('year')
                 ->get()
                 ->map(fn (TimelineEvent $event): array => [
                     'year' => $event->year,

@@ -1,5 +1,3 @@
-import { placeholderAvatarImage } from './assets'
-
 export const members = [
   {
     slug: 'adam-radcliffe',
@@ -9,7 +7,7 @@ export const members = [
     status: 'Активен',
     role: 'Лидер Векселя',
     specialization: 'Командование / переговоры',
-    image: placeholderAvatarImage,
+    image: '/images/members/adam-radcliffe.webp',
     quote: 'Цена спасает от хаоса. Бесплатная работа всегда кому-то принадлежит.',
     bio: 'Адам не строил легенду вокруг себя. Он строил порядок, потому что видел, как быстро люди умирают без него. До Векселя он сопровождал грузы между временными лагерями и понял, что каждый рейс без учета превращается в азарт. Теперь его подпись означает, что задача принята, цена зафиксирована, а отход продуман.',
     skills: [

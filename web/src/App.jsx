@@ -26,9 +26,10 @@ import {
   services,
   structure,
   terminalLines,
-  timeline,
   vehicles,
 } from './data/vexelData'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
 
 function getRoute() {
   const legacyHash = window.location.hash.replace(/^#\/?/, '')
@@ -314,8 +315,58 @@ function LeadershipCard({ card }) {
 }
 
 function HistoryPage() {
-  const [selectedYear, setSelectedYear] = useState(timeline[0].year)
-  const selectedEntry = timeline.find((item) => item.year === selectedYear) ?? timeline[0]
+  const [timelineEntries, setTimelineEntries] = useState([])
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch(`${API_BASE_URL}/timeline`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Timeline request failed')
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return
+        }
+
+        const entries = Array.isArray(data)
+          ? data.map((entry) => ({
+              ...entry,
+              chapters: Array.isArray(entry.chapters) ? entry.chapters : [],
+            }))
+          : []
+        setTimelineEntries(entries)
+        setSelectedYear((currentYear) => {
+          if (entries.some((entry) => entry.year === currentYear)) {
+            return currentYear
+          }
+
+          return entries[0]?.year ?? null
+        })
+        setStatus('ready')
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setTimelineEntries([])
+        setSelectedYear(null)
+        setStatus('error')
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const selectedEntry = timelineEntries.find((item) => item.year === selectedYear) ?? timelineEntries[0] ?? null
 
   return (
     <section className="site-section">
@@ -328,8 +379,21 @@ function HistoryPage() {
       <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <Panel seed="history-timeline" className="lg:sticky lg:top-24 lg:self-start">
           <h3 className="font-display text-4xl uppercase text-stone-100">Timeline</h3>
+          {status === 'loading' ? (
+            <p className="mt-6 font-lore text-sm leading-7 text-stone-500">Загрузка данных из архива...</p>
+          ) : null}
+          {status === 'error' ? (
+            <p className="mt-6 font-lore text-sm leading-7 text-red-300">
+              Не удалось получить данные из backend. Проверьте, что Laravel запущен на 127.0.0.1:8000.
+            </p>
+          ) : null}
+          {status === 'ready' && timelineEntries.length === 0 ? (
+            <p className="mt-6 font-lore text-sm leading-7 text-stone-500">
+              В базе данных пока нет событий хронологии. Добавьте первое событие в dashboard.
+            </p>
+          ) : null}
           <div className="mt-6 grid gap-5">
-            {timeline.map((item) => (
+            {timelineEntries.map((item) => (
               <button
                 type="button"
                 key={item.year}
@@ -356,25 +420,35 @@ function HistoryPage() {
           </div>
         </Panel>
 
-        <div className="grid gap-5">
-          <Panel seed={`history-year-${selectedEntry.year}`}>
-            <p className="font-mono text-sm text-amber-300">{selectedEntry.year}</p>
-            <h3 className="mt-3 font-display text-5xl uppercase text-stone-100">
-              {selectedEntry.title}
-            </h3>
-            <p className="mt-4 font-lore text-base leading-8 text-stone-400">{selectedEntry.text}</p>
-          </Panel>
-
-          {selectedEntry.chapters.map((chapter) => (
-            <Panel key={chapter.chapter} seed={`history-${selectedEntry.year}-${chapter.chapter}`}>
-              <p className="font-mono text-sm text-amber-300">
-                {selectedEntry.year} / CAPITOL {chapter.chapter}
-              </p>
-              <h3 className="mt-3 font-display text-4xl uppercase text-stone-100">{chapter.title}</h3>
-              <p className="mt-4 font-lore text-base leading-8 text-stone-400">{chapter.text}</p>
+        {selectedEntry ? (
+          <div className="grid gap-5">
+            <Panel seed={`history-year-${selectedEntry.year}`}>
+              <p className="font-mono text-sm text-amber-300">{selectedEntry.year}</p>
+              <h3 className="mt-3 font-display text-5xl uppercase text-stone-100">
+                {selectedEntry.title}
+              </h3>
+              <p className="mt-4 font-lore text-base leading-8 text-stone-400">{selectedEntry.text}</p>
             </Panel>
-          ))}
-        </div>
+
+            {selectedEntry.chapters.map((chapter) => (
+              <Panel key={chapter.chapter} seed={`history-${selectedEntry.year}-${chapter.chapter}`}>
+                <p className="font-mono text-sm text-amber-300">
+                  {selectedEntry.year} / CAPITOL {chapter.chapter}
+                </p>
+                <h3 className="mt-3 font-display text-4xl uppercase text-stone-100">{chapter.title}</h3>
+                <p className="mt-4 font-lore text-base leading-8 text-stone-400">{chapter.text}</p>
+              </Panel>
+            ))}
+          </div>
+        ) : (
+          <Panel seed="history-empty">
+            <p className="kicker">database</p>
+            <h3 className="mt-3 font-display text-5xl uppercase text-stone-100">Архив пуст</h3>
+            <p className="mt-4 font-lore text-base leading-8 text-stone-400">
+              Создайте событие в backend dashboard, и оно появится на этой странице автоматически.
+            </p>
+          </Panel>
+        )}
       </div>
     </section>
   )

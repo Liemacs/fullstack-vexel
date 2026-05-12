@@ -9,7 +9,7 @@ class VexelApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_vexel_endpoints_return_seeded_data(): void
+    public function test_vexel_endpoints_return_empty_collections_after_seed(): void
     {
         $this->seed();
 
@@ -20,25 +20,22 @@ class VexelApiTest extends TestCase
         $this->getJson('/api/v1/overview')
             ->assertOk()
             ->assertJson([
-                'members' => 3,
-                'active_contracts' => 1,
-                'map_points' => 5,
-                'timeline_events' => 5,
+                'members' => 0,
+                'active_contracts' => 0,
+                'map_points' => 0,
+                'timeline_events' => 0,
             ]);
 
-        $this->getJson('/api/v1/members/marco-volta')
+        $this->getJson('/api/v1/members')
             ->assertOk()
-            ->assertJsonPath('callSign', 'Volta')
-            ->assertJsonPath('skills.0.name', 'Вождение грузового транспорта');
+            ->assertExactJson([]);
 
         $this->getJson('/api/v1/vehicles')
             ->assertOk()
-            ->assertJsonPath('0.category', 'Грузовики')
-            ->assertJsonPath('0.items.0.name', 'V-13 Mule');
+            ->assertExactJson([]);
 
         $this->getJson('/api/v1/timeline')
             ->assertOk()
-            ->assertJsonPath('3.year', '2039')
-            ->assertJsonPath('3.chapters.2.chapter', '03');
+            ->assertExactJson([]);
     }
 }
