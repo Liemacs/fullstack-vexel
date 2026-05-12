@@ -1,0 +1,6 @@
+export const terminalLines = [
+  '> ACCESSING VEXEL DATABASE...',
+  '> SIGNAL STABLE / CHANNEL 13',
+  '> DOSSIER INDEX: 044-A',
+  '> CLEARANCE: INTERNAL ARCHIVE',
+]
