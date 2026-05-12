@@ -2,7 +2,8 @@ services:
   - type: web
     name: vexel-backend
     env: docker
-    rootDir: backend
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     plan: starter
     disk:
       name: vexel-sqlite
@@ -29,7 +30,8 @@ services:
   - type: web
     name: vexel-web
     env: docker
-    rootDir: web
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: ./web
     plan: starter
     envVars:
       - key: API_BASE_URL

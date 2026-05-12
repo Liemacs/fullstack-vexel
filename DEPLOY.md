@@ -35,3 +35,17 @@ Backend-ul foloseste SQLite pe disk persistent la `/var/data/database.sqlite`.
 Containerul ruleaza automat `php artisan migrate --force` la pornire.
 
 Nu ruleaza seed la pornire, ca sa nu stearga datele create din dashboard.
+
+## Daca creezi serviciile manual pe Render
+
+Nu seta `docker-compose.yml` ca Dockerfile. Render nu foloseste Docker Compose la deploy.
+
+Pentru backend:
+
+- Dockerfile Path: `backend/Dockerfile`
+- Docker Context Directory: `backend`
+
+Pentru frontend:
+
+- Dockerfile Path: `web/Dockerfile`
+- Docker Context Directory: `web`
