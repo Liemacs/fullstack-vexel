@@ -29,7 +29,7 @@ import {
   vehicles,
 } from './data/vexelData'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
+const API_BASE_URL = window.__VEXEL_CONFIG__?.API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
 
 function getRoute() {
   const legacyHash = window.location.hash.replace(/^#\/?/, '')
