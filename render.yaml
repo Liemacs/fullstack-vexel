@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: vexel-backend
+    name: vexel
     env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
     disk:
       name: vexel-sqlite
@@ -26,13 +26,5 @@ services:
         value: /var/data/database.sqlite
       - key: LOG_CHANNEL
         value: stderr
-
-  - type: web
-    name: vexel-web
-    env: docker
-    dockerfilePath: ./web/Dockerfile
-    dockerContext: ./web
-    plan: starter
-    envVars:
       - key: API_BASE_URL
-        sync: false
+        value: /api/v1

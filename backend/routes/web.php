@@ -21,3 +21,7 @@ Route::prefix('/dashboard/timeline')->name('dashboard.timeline.')->group(functio
     Route::delete('/{timelineEvent}', [TimelineController::class, 'destroy'])->name('destroy');
 });
 Route::get('/dashboard/{section}', [DashboardController::class, 'page'])->name('dashboard.page');
+
+Route::fallback(function () {
+    return response()->file(public_path('index.html'));
+});
