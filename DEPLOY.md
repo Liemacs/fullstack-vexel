@@ -29,6 +29,8 @@ Backend-ul foloseste SQLite pe disk persistent la `/var/data/database.sqlite`.
 Containerul ruleaza automat `php artisan migrate --force` la pornire.
 
 Nu ruleaza seed la pornire, ca sa nu stearga datele create din dashboard.
+La pornire, containerul creeaza automat `.env` cu setarile pentru Laravel, inclusiv `APP_KEY`, `DB_CONNECTION` si `DB_DATABASE`.
+Pentru sesiuni stabile, este recomandat sa pastrezi `APP_KEY` ca env var in Render; daca lipseste, containerul genereaza una automat.
 
 ## Daca creezi serviciul manual pe Render
 
