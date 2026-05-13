@@ -52,6 +52,9 @@ ENV APP_ENV=production \
     LOG_CHANNEL=stderr \
     DB_CONNECTION=sqlite \
     DB_DATABASE=/var/data/database.sqlite \
+    PERSISTENT_DATA_PATH=/var/data \
+    REQUIRE_PERSISTENT_SQLITE=true \
+    SQLITE_BACKUP_KEEP=10 \
     API_BASE_URL=/api/v1
 
 EXPOSE 80

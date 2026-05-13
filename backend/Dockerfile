@@ -40,7 +40,10 @@ ENV APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
     DB_CONNECTION=sqlite \
-    DB_DATABASE=/var/data/database.sqlite
+    DB_DATABASE=/var/data/database.sqlite \
+    PERSISTENT_DATA_PATH=/var/data \
+    REQUIRE_PERSISTENT_SQLITE=true \
+    SQLITE_BACKUP_KEEP=10
 
 EXPOSE 80
 

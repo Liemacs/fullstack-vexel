@@ -24,6 +24,12 @@ services:
         value: sqlite
       - key: DB_DATABASE
         value: /var/data/database.sqlite
+      - key: PERSISTENT_DATA_PATH
+        value: /var/data
+      - key: REQUIRE_PERSISTENT_SQLITE
+        value: "true"
+      - key: SQLITE_BACKUP_KEEP
+        value: "10"
       - key: LOG_CHANNEL
         value: stderr
       - key: API_BASE_URL

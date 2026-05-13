@@ -101,7 +101,7 @@ export function CharacterProfile({ member }) {
                 <img
                   src={member.position.image}
                   alt={member.role}
-                  className="mt-5 aspect-[16/9] w-full object-cover grayscale"
+                  className="mt-5 w-full object-cover"
                 />
               ) : null}
               <div className="mt-5 grid gap-2">
