@@ -7,6 +7,6 @@ export const navItems = [
   { id: 'contracts', label: 'Контракты' },
   // { id: 'map', label: 'Карта' },
   // { id: 'gear', label: 'Техника' },
-  { id: 'code', label: 'Кодекс' },
+  { id: 'code', label: 'Устав' },
   { id: 'login', label: 'Кабинет' },
 ]

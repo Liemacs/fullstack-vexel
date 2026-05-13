@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\MapPoint;
 use App\Models\Member;
+use App\Models\MemberAccessToken;
 use App\Models\Position;
 use App\Models\TimelineEvent;
 use App\Models\VehicleCategory;
 use App\Support\MemberPayload;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class VexelController extends Controller
 {
@@ -32,22 +34,32 @@ class VexelController extends Controller
         ]);
     }
 
-    public function members(): JsonResponse
+    public function members(Request $request): JsonResponse
     {
+        $includeSensitive = $this->hasMemberAccess($request);
+
         return response()->json(
-            Member::query()->with('position')->orderBy('id')->get()->map(fn (Member $member): array => MemberPayload::format($member))
+            Member::query()
+                ->with('position')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (Member $member): array => MemberPayload::format($member, $includeSensitive))
         );
     }
 
-    public function member(Member $member): JsonResponse
+    public function member(Request $request, Member $member): JsonResponse
     {
         $member->load('position');
 
-        return response()->json(MemberPayload::format($member));
+        return response()->json(MemberPayload::format($member, $this->hasMemberAccess($request)));
     }
 
-    public function positions(): JsonResponse
+    public function positions(Request $request): JsonResponse
     {
+        if (! $this->hasMemberAccess($request)) {
+            return $this->unauthorized();
+        }
+
         return response()->json(
             Position::query()
                 ->orderBy('sort_order')
@@ -56,8 +68,12 @@ class VexelController extends Controller
         );
     }
 
-    public function contracts(): JsonResponse
+    public function contracts(Request $request): JsonResponse
     {
+        if (! $this->hasMemberAccess($request)) {
+            return $this->unauthorized();
+        }
+
         return response()->json(
             Contract::query()->orderBy('number')->get(['number', 'title', 'status', 'payment', 'client', 'text'])
         );
@@ -119,5 +135,25 @@ class VexelController extends Controller
                     ])->values(),
                 ])
         );
+    }
+
+    private function hasMemberAccess(Request $request): bool
+    {
+        $plainToken = $request->bearerToken();
+
+        if (! $plainToken) {
+            return false;
+        }
+
+        return MemberAccessToken::query()
+            ->where('token_hash', hash('sha256', $plainToken))
+            ->exists();
+    }
+
+    private function unauthorized(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Требуется вход участника.',
+        ], 401);
     }
 }

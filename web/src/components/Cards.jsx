@@ -9,7 +9,7 @@ function statusTone(status) {
   return 'default'
 }
 
-export function CharacterCard({ member }) {
+export function CharacterCard({ member, showSensitive = false }) {
   const wear = cardWear(`dossier-${member.slug}`, 'group dossier-card')
 
   return (
@@ -40,7 +40,7 @@ export function CharacterCard({ member }) {
           </div>
           <UserRound className="mt-1 h-5 w-5 text-stone-500 transition group-hover:text-amber-300" />
         </div>
-        {member.role ? <p className="mt-4 font-lore text-sm text-stone-400">{member.role}</p> : null}
+        {showSensitive && member.role ? <p className="mt-4 font-lore text-sm text-stone-400">{member.role}</p> : null}
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold uppercase text-amber-300">
           Досье <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
         </span>

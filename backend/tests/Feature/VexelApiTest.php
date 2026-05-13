@@ -35,8 +35,8 @@ class VexelApiTest extends TestCase
             ->assertExactJson([]);
 
         $this->getJson('/api/v1/contracts')
-            ->assertOk()
-            ->assertExactJson([]);
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'Требуется вход участника.');
 
         $this->getJson('/api/v1/timeline')
             ->assertOk()

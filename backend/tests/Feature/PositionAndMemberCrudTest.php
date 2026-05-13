@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Member;
+use App\Models\MemberAccessToken;
 use App\Models\Position;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -15,6 +16,8 @@ class PositionAndMemberCrudTest extends TestCase
 
     public function test_position_can_be_created_updated_and_deleted(): void
     {
+        $this->asDashboardAdmin();
+
         $this->post('/dashboard/positions', [
             'name' => 'Лидер',
             'sort_order' => 1,
@@ -45,6 +48,8 @@ class PositionAndMemberCrudTest extends TestCase
 
     public function test_member_can_be_created_updated_and_deleted_with_position(): void
     {
+        $this->asDashboardAdmin();
+
         $position = Position::query()->create([
             'name' => 'Механик',
             'image' => '/images/position.webp',
@@ -93,6 +98,25 @@ class PositionAndMemberCrudTest extends TestCase
     public function test_member_api_returns_position_data(): void
     {
         $position = Position::query()->create(['name' => 'Охотник', 'image' => '/rank.webp']);
+        $member = Member::query()->create([
+            ...$this->memberModelPayload(),
+            'position_id' => $position->id,
+            'role' => 'Охотник',
+        ]);
+
+        $this->getJson('/api/v1/members', [
+            'Authorization' => 'Bearer '.$this->memberToken($member),
+        ])
+            ->assertOk()
+            ->assertJsonPath('0.nickname', 'hunter')
+            ->assertJsonPath('0.role', 'Охотник')
+            ->assertJsonPath('0.position.name', 'Охотник')
+            ->assertJsonPath('0.position.image', '/rank.webp');
+    }
+
+    public function test_member_api_hides_position_data_for_guests(): void
+    {
+        $position = Position::query()->create(['name' => 'Охотник', 'image' => '/rank.webp']);
         Member::query()->create([
             ...$this->memberModelPayload(),
             'position_id' => $position->id,
@@ -101,10 +125,8 @@ class PositionAndMemberCrudTest extends TestCase
 
         $this->getJson('/api/v1/members')
             ->assertOk()
-            ->assertJsonPath('0.nickname', 'hunter')
-            ->assertJsonPath('0.role', 'Охотник')
-            ->assertJsonPath('0.position.name', 'Охотник')
-            ->assertJsonPath('0.position.image', '/rank.webp');
+            ->assertJsonMissingPath('0.role')
+            ->assertJsonMissingPath('0.position');
     }
 
     private function memberPayload(array $overrides = []): array
@@ -148,5 +170,17 @@ class PositionAndMemberCrudTest extends TestCase
             'gear' => [],
             'connections' => [],
         ];
+    }
+
+    private function memberToken(Member $member): string
+    {
+        $plainToken = 'member-position-token';
+
+        MemberAccessToken::query()->create([
+            'member_id' => $member->id,
+            'token_hash' => hash('sha256', $plainToken),
+        ]);
+
+        return $plainToken;
     }
 }

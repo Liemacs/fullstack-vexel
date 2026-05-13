@@ -13,7 +13,7 @@ class DashboardTest extends TestCase
     {
         $this->seed();
 
-        $this->get('/dashboard')
+        $this->asDashboardAdmin()->get('/dashboard')
             ->assertOk()
             ->assertSee('Vexel Admin')
             ->assertSee('Контракты')
@@ -25,12 +25,12 @@ class DashboardTest extends TestCase
 
     public function test_dashboard_section_pages_are_reachable(): void
     {
-        $this->get('/dashboard/members')
+        $this->asDashboardAdmin()->get('/dashboard/members')
             ->assertOk()
             ->assertSee('Участники')
             ->assertSee('Создать участника');
 
-        $this->get('/dashboard/positions')
+        $this->asDashboardAdmin()->get('/dashboard/positions')
             ->assertOk()
             ->assertSee('Должности')
             ->assertSee('Создать должность');

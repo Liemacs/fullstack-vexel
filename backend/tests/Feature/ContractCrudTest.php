@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Contract;
+use App\Models\Member;
+use App\Models\MemberAccessToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ContractCrudTest extends TestCase
@@ -12,6 +15,8 @@ class ContractCrudTest extends TestCase
 
     public function test_contract_can_be_created_updated_and_deleted(): void
     {
+        $this->asDashboardAdmin();
+
         $this->get('/dashboard/contracts')->assertOk();
         $this->get('/dashboard/contracts/create')->assertOk();
 
@@ -47,11 +52,20 @@ class ContractCrudTest extends TestCase
     {
         Contract::query()->create($this->payload());
 
-        $this->getJson('/api/v1/contracts')
+        $this->getJson('/api/v1/contracts', [
+            'Authorization' => 'Bearer '.$this->memberToken(),
+        ])
             ->assertOk()
             ->assertJsonPath('0.number', '#019')
             ->assertJsonPath('0.title', 'Охрана каравана')
             ->assertJsonPath('0.status', 'Активно');
+    }
+
+    public function test_contract_api_requires_member_login(): void
+    {
+        $this->getJson('/api/v1/contracts')
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'Требуется вход участника.');
     }
 
     private function payload(array $overrides = []): array
@@ -65,5 +79,26 @@ class ContractCrudTest extends TestCase
             'text' => 'Три грузовика и ночной переход через сухое русло.',
             ...$overrides,
         ];
+    }
+
+    private function memberToken(): string
+    {
+        $plainToken = 'test-member-token';
+        $member = Member::query()->create([
+            'slug' => 'member',
+            'nickname' => 'member',
+            'password' => Hash::make('secret123'),
+            'name' => 'Member',
+            'skills' => [],
+            'gear' => [],
+            'connections' => [],
+        ]);
+
+        MemberAccessToken::query()->create([
+            'member_id' => $member->id,
+            'token_hash' => hash('sha256', $plainToken),
+        ]);
+
+        return $plainToken;
     }
 }

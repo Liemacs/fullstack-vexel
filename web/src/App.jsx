@@ -92,14 +92,20 @@ function normalizePosition(position) {
   }
 }
 
-function useApiMembers() {
+function authHeaders(authToken) {
+  return authToken ? { Authorization: `Bearer ${authToken}` } : {}
+}
+
+function useApiMembers(authToken) {
   const [members, setMembers] = useState([])
   const [status, setStatus] = useState('loading')
 
   useEffect(() => {
     let isMounted = true
 
-    fetch(`${API_BASE_URL}/members`)
+    fetch(`${API_BASE_URL}/members`, {
+      headers: authHeaders(authToken),
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Members request failed')
@@ -127,18 +133,25 @@ function useApiMembers() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [authToken])
 
   return { members, status, setMembers }
 }
 
-function usePositions() {
+function usePositions(authToken) {
   const [positions, setPositions] = useState([])
 
   useEffect(() => {
+    if (!authToken) {
+      setPositions([])
+      return undefined
+    }
+
     let isMounted = true
 
-    fetch(`${API_BASE_URL}/positions`)
+    fetch(`${API_BASE_URL}/positions`, {
+      headers: authHeaders(authToken),
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Positions request failed')
@@ -160,19 +173,28 @@ function usePositions() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [authToken])
 
   return positions
 }
 
-function useApiContracts() {
+function useApiContracts(authToken) {
   const [contracts, setContracts] = useState([])
-  const [status, setStatus] = useState('loading')
+  const [status, setStatus] = useState(authToken ? 'loading' : 'locked')
 
   useEffect(() => {
-    let isMounted = true
+    if (!authToken) {
+      setContracts([])
+      setStatus('locked')
+      return undefined
+    }
 
-    fetch(`${API_BASE_URL}/contracts`)
+    let isMounted = true
+    setStatus('loading')
+
+    fetch(`${API_BASE_URL}/contracts`, {
+      headers: authHeaders(authToken),
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Contracts request failed')
@@ -200,7 +222,7 @@ function useApiContracts() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [authToken])
 
   return { contracts, status }
 }
@@ -250,13 +272,14 @@ function getRoute() {
 
 function App() {
   const [route, setRoute] = useState(getRoute)
-  const { members, status: membersStatus, setMembers } = useApiMembers()
-  const { contracts, status: contractsStatus } = useApiContracts()
-  const positions = usePositions()
   const [authToken, setAuthToken] = useState(storedMemberToken)
   const [currentMember, setCurrentMember] = useState(null)
   const [authStatus, setAuthStatus] = useState(authToken ? 'loading' : 'guest')
   const [authError, setAuthError] = useState('')
+  const isMemberLoggedIn = authStatus === 'authenticated' && Boolean(currentMember)
+  const { members, status: membersStatus, setMembers } = useApiMembers(authToken)
+  const { contracts, status: contractsStatus } = useApiContracts(authToken)
+  const positions = usePositions(authToken)
 
   useEffect(() => {
     const onPopState = () => setRoute(getRoute())
@@ -420,7 +443,7 @@ function App() {
   return (
     <Shell activePage={activePage}>
       {route.page === 'profile' ? (
-        <ProfilePage profile={profile} status={membersStatus} />
+        <ProfilePage profile={profile} status={membersStatus} isMemberLoggedIn={isMemberLoggedIn} />
       ) : (
         <Page
           page={route.page}
@@ -432,6 +455,7 @@ function App() {
           authStatus={authStatus}
           authError={authError}
           currentMember={currentMember}
+          isMemberLoggedIn={isMemberLoggedIn}
           onMemberLogin={handleMemberLogin}
           onMemberLogout={handleMemberLogout}
           onMemberSave={handleMemberSave}
@@ -451,6 +475,7 @@ function Page({
   authStatus,
   authError,
   currentMember,
+  isMemberLoggedIn,
   onMemberLogin,
   onMemberLogout,
   onMemberSave,
@@ -463,7 +488,7 @@ function Page({
     case 'structure':
       return <StructurePage />
     case 'people':
-      return <PeoplePage members={members} status={membersStatus} />
+      return <PeoplePage members={members} status={membersStatus} isMemberLoggedIn={isMemberLoggedIn} />
     case 'login':
       return (
         <MemberPortal
@@ -477,7 +502,7 @@ function Page({
         />
       )
     case 'contracts':
-      return <ContractsPage contracts={contracts} status={contractsStatus} />
+      return <ContractsPage contracts={contracts} status={contractsStatus} isMemberLoggedIn={isMemberLoggedIn} />
     case 'map':
       return <MapPage />
     case 'gear':
@@ -490,9 +515,9 @@ function Page({
   }
 }
 
-function ProfilePage({ profile, status }) {
+function ProfilePage({ profile, status, isMemberLoggedIn }) {
   if (profile) {
-    return <CharacterProfile member={profile} />
+    return <CharacterProfile member={profile} showSensitive={isMemberLoggedIn} />
   }
 
   return (
@@ -509,6 +534,21 @@ function ProfilePage({ profile, status }) {
         </p>
       </Panel>
     </section>
+  )
+}
+
+function AccessLockedPanel({ title = 'Доступ закрыт' }) {
+  return (
+    <Panel seed={`locked-${title}`}>
+      <p className="kicker">требуется вход</p>
+      <h2 className="mt-3 font-display text-5xl uppercase text-stone-100">{title}</h2>
+      <p className="mt-4 max-w-2xl font-lore text-base leading-8 text-stone-400">
+        Эти данные доступны только участникам Векселя после входа в кабинет.
+      </p>
+      <a href="/login" className="mt-6 inline-flex w-fit border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-sm font-semibold uppercase text-amber-200 transition hover:bg-amber-400/20">
+        Войти в кабинет
+      </a>
+    </Panel>
   )
 }
 
@@ -908,7 +948,7 @@ function StructurePage() {
   )
 }
 
-function PeoplePage({ members, status }) {
+function PeoplePage({ members, status, isMemberLoggedIn }) {
   return (
     <section className="site-section">
       <SectionHeader
@@ -940,7 +980,7 @@ function PeoplePage({ members, status }) {
       {members.length > 0 ? (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {members.map((member) => (
-            <CharacterCard key={member.slug} member={member} />
+            <CharacterCard key={member.slug} member={member} showSensitive={isMemberLoggedIn} />
           ))}
         </div>
       ) : null}
@@ -948,7 +988,20 @@ function PeoplePage({ members, status }) {
   )
 }
 
-function ContractsPage({ contracts, status }) {
+function ContractsPage({ contracts, status, isMemberLoggedIn }) {
+  if (!isMemberLoggedIn) {
+    return (
+      <section className="site-section">
+        <SectionHeader
+          eyebrow="журнал оплаты"
+          title="Контракты"
+          text="Контрактный журнал доступен только участникам Векселя."
+        />
+        <AccessLockedPanel title="Контракты скрыты" />
+      </section>
+    )
+  }
+
   return (
     <section className="site-section">
       <SectionHeader
@@ -1010,19 +1063,67 @@ function CodePage() {
     <section className="site-section">
       <SectionHeader
         eyebrow="внутренний порядок"
-        title="Внутренний кодекс"
-        text="Короткие правила, за нарушение которых не спорят у костра."
+        title={codeRules.title}
+        text={codeRules.intro}
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        {codeRules.map((rule, index) => (
-          <Panel key={rule} seed={`code-${rule}`}>
-            <div className="flex items-start gap-4">
-              <span className="font-mono text-sm text-amber-300">{String(index + 1).padStart(2, '0')}</span>
-              <p className="text-lg font-semibold text-stone-100">{rule}</p>
+      <div className="grid gap-5 lg:grid-cols-2">
+        {codeRules.sections.map((section) => (
+          <Panel key={section.title} seed={`code-${section.title}`} className="flex h-full flex-col gap-5">
+            <h3 className="font-display text-3xl uppercase text-stone-100">{section.title}</h3>
+            <div className="grid gap-4">
+              {section.rules.map((rule, index) => (
+                <div key={rule} className="flex items-start gap-4 border-l border-amber-400/30 pl-4">
+                  <span className="font-mono text-sm text-amber-300">{String(index + 1).padStart(2, '0')}</span>
+                  <p className="font-lore text-sm leading-6 text-stone-300">{rule}</p>
+                </div>
+              ))}
             </div>
           </Panel>
         ))}
       </div>
+
+      <Panel seed="punishments" className="mt-6">
+        <div className="mb-6">
+          <p className="font-mono text-sm uppercase text-amber-300">Наказания</p>
+          <p className="mt-3 font-lore text-sm leading-6 text-stone-400">{codeRules.punishmentsIntro}</p>
+        </div>
+        <div className="grid gap-5">
+          {codeRules.punishments.map((item) => (
+            <div key={item.level} className="border-t border-stone-800 pt-5">
+              <div className="grid gap-4 lg:grid-cols-[180px_1fr_260px]">
+                <div>
+                  <p className="font-display text-3xl uppercase text-stone-100">{item.level}</p>
+                </div>
+                <div>
+                  <p className="mb-3 font-mono text-xs uppercase text-stone-500">Деяние</p>
+                  <ul className="grid gap-2 font-lore text-sm leading-6 text-stone-300">
+                    {item.deeds.map((deed) => (
+                      <li key={deed}>— {deed}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="mb-3 font-mono text-xs uppercase text-stone-500">Наказание</p>
+                  <p className="font-semibold text-amber-200">{item.punishment}</p>
+                  <p className="mt-3 font-lore text-sm leading-6 text-stone-400">{item.text}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel seed="calculation" className="mt-6">
+        <p className="font-mono text-sm uppercase text-amber-300">Расчёт</p>
+        <div className="mt-5 grid gap-4">
+          {codeRules.calculation.map((rule, index) => (
+            <div key={rule} className="flex items-start gap-4">
+              <span className="font-mono text-sm text-amber-300">{String(index + 1).padStart(2, '0')}</span>
+              <p className="font-lore text-sm leading-6 text-stone-300">{rule}</p>
+            </div>
+          ))}
+        </div>
+      </Panel>
     </section>
   )
 }

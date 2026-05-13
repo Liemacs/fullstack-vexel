@@ -255,20 +255,21 @@
     <aside class="sidebar" aria-label="Административная навигация">
         <div class="brand">
             <strong>Vexel Admin</strong>
-            <span>Панель backend</span>
         </div>
 
         <nav class="nav">
             @foreach ($navigation as $item)
                 <a class="{{ $item['key'] === 'dashboard' ? 'active' : '' }}" href="{{ $item['href'] }}">
                     <span>{{ $item['label'] }}</span>
-                    <small>{{ $item['description'] }}</small>
+                    @if ($item['description'])
+                        <small>{{ $item['description'] }}</small>
+                    @endif
                 </a>
             @endforeach
         </nav>
 
         <div class="sidebar-footer">
-            Laravel backend / готово для CRUD
+            Vexel backend / готово для CRUD
         </div>
     </aside>
 

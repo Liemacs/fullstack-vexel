@@ -12,6 +12,8 @@ class TimelineCrudTest extends TestCase
 
     public function test_timeline_event_can_be_created_with_chapters(): void
     {
+        $this->asDashboardAdmin();
+
         $this->post('/dashboard/timeline', [
             'year' => '2039',
             'title' => 'Основание Векселя',
@@ -38,6 +40,8 @@ class TimelineCrudTest extends TestCase
 
     public function test_timeline_event_can_be_updated_and_chapters_are_synced(): void
     {
+        $this->asDashboardAdmin();
+
         $event = TimelineEvent::query()->create([
             'year' => '2035',
             'title' => 'Старое событие',
@@ -81,6 +85,8 @@ class TimelineCrudTest extends TestCase
 
     public function test_timeline_event_can_be_deleted_with_chapters(): void
     {
+        $this->asDashboardAdmin();
+
         $event = TimelineEvent::query()->create([
             'year' => '2037',
             'title' => 'Формирование Совета',
@@ -104,6 +110,8 @@ class TimelineCrudTest extends TestCase
 
     public function test_timeline_pages_render(): void
     {
+        $this->asDashboardAdmin();
+
         TimelineEvent::query()->create([
             'year' => '2035',
             'title' => 'Падение Лос-Сантоса',

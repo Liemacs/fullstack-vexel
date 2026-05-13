@@ -269,7 +269,9 @@
             @foreach ($navigation as $item)
                 <a class="{{ $item['key'] === 'timeline' ? 'active' : '' }}" href="{{ $item['href'] }}">
                     <span>{{ $item['label'] }}</span>
-                    <small>{{ $item['description'] }}</small>
+                    @if ($item['description'])
+                        <small>{{ $item['description'] }}</small>
+                    @endif
                 </a>
             @endforeach
         </nav>

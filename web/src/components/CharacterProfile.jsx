@@ -1,7 +1,7 @@
 import { ArrowLeft, Radio, ShieldCheck } from 'lucide-react'
 import { Panel, Tag } from './Interface'
 
-export function CharacterProfile({ member }) {
+export function CharacterProfile({ member, showSensitive = false }) {
   return (
     <div>
       <section className="relative min-h-[62svh] overflow-hidden border-b border-stone-800">
@@ -32,8 +32,8 @@ export function CharacterProfile({ member }) {
                 ['Имя', member.name],
                 ['Возраст', member.age],
                 ['Статус', member.status],
-                ['Должность', member.role],
-              ].filter(([, value]) => value).map(([label, value]) => (
+                showSensitive ? ['Должность', member.role] : null,
+              ].filter(Boolean).filter(([, value]) => value).map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between gap-4 border-b border-stone-800 pb-3">
                   <span className="text-stone-500">{label}</span>
                   <span className="text-right text-stone-100">{value}</span>
@@ -94,7 +94,7 @@ export function CharacterProfile({ member }) {
             </Panel>
           ) : null}
 
-          {member.role || member.position?.image ? (
+          {showSensitive && (member.role || member.position?.image) ? (
             <Panel seed={`profile-${member.slug}-position`}>
               <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
               {member.position?.image ? (
@@ -112,7 +112,17 @@ export function CharacterProfile({ member }) {
                 ) : null}
               </div>
             </Panel>
-          ) : null}
+          ) : <Panel seed={`profile-${member.slug}-position`}>
+          <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
+          
+          <div className="mt-5 grid gap-2">
+
+              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
+                Доступно только для участников Векселя
+              </div>
+
+          </div>
+        </Panel>}
         </div>
 
         {member.vexelHistory ? <div className="mt-6">
