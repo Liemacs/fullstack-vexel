@@ -21,10 +21,11 @@ WORKDIR /var/www/html
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        libpq-dev \
         libsqlite3-dev \
         libzip-dev \
         unzip \
-    && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql pdo_sqlite zip \
     && a2enmod rewrite headers \
     && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf \
     && sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf \
@@ -42,7 +43,7 @@ ENV APP_ENV=production \
     DB_CONNECTION=sqlite \
     DB_DATABASE=/var/data/database.sqlite \
     PERSISTENT_DATA_PATH=/var/data \
-    REQUIRE_PERSISTENT_SQLITE=true \
+    REQUIRE_PERSISTENT_SQLITE=false \
     SQLITE_BACKUP_KEEP=10
 
 EXPOSE 80

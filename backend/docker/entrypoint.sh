@@ -15,12 +15,21 @@ APP_URL_VALUE="${APP_URL:-http://localhost}"
 LOG_CHANNEL_VALUE="${LOG_CHANNEL:-stderr}"
 DB_CONNECTION_VALUE="${DB_CONNECTION:-sqlite}"
 DB_DATABASE_VALUE="${DB_DATABASE:-${PERSISTENT_DATA_PATH}/database.sqlite}"
+DATABASE_URL_VALUE="${DATABASE_URL:-}"
+DB_URL_VALUE="${DB_URL:-${DATABASE_URL_VALUE}}"
 SESSION_DRIVER_VALUE="${SESSION_DRIVER:-database}"
 CACHE_STORE_VALUE="${CACHE_STORE:-database}"
 QUEUE_CONNECTION_VALUE="${QUEUE_CONNECTION:-database}"
 
+if [ -n "${DB_URL_VALUE}" ]; then
+  case "${DB_URL_VALUE}" in
+    postgres://*|postgresql://*) DB_CONNECTION_VALUE="pgsql" ;;
+    mysql://*|mariadb://*) DB_CONNECTION_VALUE="mysql" ;;
+  esac
+fi
+
 if [ -z "${REQUIRE_PERSISTENT_SQLITE:-}" ]; then
-  if [ "${APP_ENV_VALUE}" = "production" ]; then
+  if [ "${APP_ENV_VALUE}" = "production" ] && [ "${DB_CONNECTION_VALUE}" = "sqlite" ] && [ -n "${RENDER:-}" ]; then
     REQUIRE_PERSISTENT_SQLITE_VALUE="true"
   else
     REQUIRE_PERSISTENT_SQLITE_VALUE="false"
@@ -50,6 +59,8 @@ LOG_CHANNEL=${LOG_CHANNEL_VALUE}
 LOG_LEVEL=${LOG_LEVEL:-debug}
 
 DB_CONNECTION=${DB_CONNECTION_VALUE}
+DB_URL=${DB_URL_VALUE}
+DATABASE_URL=${DATABASE_URL_VALUE}
 DB_DATABASE=${DB_DATABASE_VALUE}
 DB_FOREIGN_KEYS=true
 
@@ -81,7 +92,7 @@ if [ "${DB_CONNECTION_VALUE}" = "sqlite" ]; then
   if [ "${REQUIRE_PERSISTENT_SQLITE_VALUE}" = "true" ] \
     && ! awk -v path="${PERSISTENT_DATA_PATH}" '$2 == path { found=1 } END { exit found ? 0 : 1 }' /proc/mounts; then
     echo "ERROR: ${PERSISTENT_DATA_PATH} is not mounted as a persistent disk/volume." >&2
-    echo "On Render, add a persistent disk with mount path ${PERSISTENT_DATA_PATH} before deploying." >&2
+    echo "Add a persistent disk/volume with mount path ${PERSISTENT_DATA_PATH}, or configure DATABASE_URL for PostgreSQL/MySQL." >&2
     echo "The app is stopping to avoid creating a new empty SQLite database on ephemeral storage." >&2
     exit 1
   fi
@@ -102,7 +113,20 @@ chown -R www-data:www-data "${PERSISTENT_DATA_PATH}" storage bootstrap/cache pub
 php artisan config:clear --no-interaction
 php artisan route:clear --no-interaction
 php artisan view:clear --no-interaction
-php artisan migrate --force --no-interaction
+
+MIGRATE_ATTEMPTS="${MIGRATE_ATTEMPTS:-20}"
+MIGRATE_ATTEMPT=1
+until php artisan migrate --force --no-interaction; do
+  if [ "${MIGRATE_ATTEMPT}" -ge "${MIGRATE_ATTEMPTS}" ]; then
+    echo "ERROR: Database migrations failed after ${MIGRATE_ATTEMPTS} attempts." >&2
+    exit 1
+  fi
+
+  MIGRATE_ATTEMPT=$((MIGRATE_ATTEMPT + 1))
+  echo "Database is not ready yet. Retrying migration (${MIGRATE_ATTEMPT}/${MIGRATE_ATTEMPTS})..."
+  sleep 3
+done
+
 php artisan config:cache --no-interaction
 php artisan route:cache --no-interaction
 php artisan view:cache --no-interaction

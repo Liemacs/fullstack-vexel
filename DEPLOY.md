@@ -1,52 +1,60 @@
-# Deploy pe Render
+# Deploy pe Railway
 
-Proiectul poate rula ca un singur serviciu Docker:
+Proiectul ruleaza ca un singur serviciu Docker:
 
 - Laravel API + dashboard
 - frontend Vite build-uit static in `public/`
+- baza de date intr-un serviciu separat PostgreSQL
 
-## Local cu Docker
+## Railway
+
+1. Creeaza un serviciu din repository pentru aplicatie.
+2. Creeaza un serviciu separat `PostgreSQL` in acelasi project Railway.
+3. In serviciul aplicatiei, adauga variabila:
+
+```txt
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
+Numele `Postgres` trebuie sa fie exact numele serviciului PostgreSQL din Railway. Daca Railway ti-a creat DB-ul cu alt nume, foloseste acel nume in loc de `Postgres`.
+
+Variabile recomandate pentru aplicatie:
+
+```txt
+APP_NAME=Vexel API
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://vexel-production.up.railway.app
+APP_KEY=base64:...
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+API_BASE_URL=/api/v1
+LOG_CHANNEL=stderr
+```
+
+Nu seta `DB_CONNECTION=sqlite` pe Railway. Daca exista `DATABASE_URL`, containerul seteaza automat Laravel pe `pgsql`.
+
+Containerul ruleaza automat:
+
+```bash
+php artisan migrate --force
+```
+
+Nu ruleaza `seed`, `migrate:fresh` sau alte comenzi care sterg datele.
+
+## Date persistente
+
+Baza de date este persistenta in serviciul PostgreSQL Railway, nu in containerul aplicatiei. Redeploy-ul aplicatiei nu sterge datele din PostgreSQL.
+
+Atentie: fisierele uploadate local in container pot fi efemere pe Railway. Pentru imagini persistente pe termen lung, foloseste un Railway Volume montat la `/var/data` sau un storage extern.
+
+## Local cu Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-Cu Dockerfile-ul din root, pe Render poti lasa:
+Configuratia locala foloseste tot PostgreSQL separat, cu volum Docker `postgres-data`.
 
-- Dockerfile Path: `./Dockerfile`
-- Docker Build Context Directory: `.`
+## Render legacy
 
-## Render
-
-Poti folosi `render.yaml` din root pentru Blueprint deploy.
-
-Setari importante dupa creare:
-
-- Seteaza `APP_URL` la URL-ul public Render.
-- `API_BASE_URL` poate ramane `/api/v1`, fiindca frontend-ul si backend-ul ruleaza in acelasi container.
-
-Backend-ul foloseste SQLite pe disk persistent la `/var/data/database.sqlite`.
-Containerul ruleaza automat `php artisan migrate --force` la pornire.
-
-Nu ruleaza seed la pornire, ca sa nu stearga datele create din dashboard.
-Containerul verifica in productie ca `/var/data` este montat ca disk/volum persistent. Daca lipseste, aplicatia se opreste inainte sa creeze o baza SQLite noua pe storage temporar.
-Inainte de fiecare migrare, daca baza exista, se creeaza automat un backup in `/var/data/backups`. Se pastreaza ultimele 10 backup-uri.
-La pornire, containerul creeaza automat `.env` cu setarile pentru Laravel, inclusiv `APP_KEY`, `DB_CONNECTION` si `DB_DATABASE`.
-Pentru sesiuni stabile, este recomandat sa pastrezi `APP_KEY` ca env var in Render; daca lipseste, containerul genereaza una automat.
-
-## Daca creezi serviciul manual pe Render
-
-Nu seta `docker-compose.yml` ca Dockerfile. Render nu foloseste Docker Compose la deploy.
-
-Seteaza:
-
-- Dockerfile Path: `./Dockerfile`
-- Docker Context Directory: `.`
-
-Adauga obligatoriu un Persistent Disk:
-
-- Mount Path: `/var/data`
-- `DB_DATABASE`: `/var/data/database.sqlite`
-- `REQUIRE_PERSISTENT_SQLITE`: `true`
-
-Daca serviciul porneste fara acest disk, datele SQLite vor fi pierdute la redeploy. Noua configuratie opreste containerul in acest caz ca sa previna o baza goala noua.
+Configuratia `render.yaml` ramane pentru Render. Pe Render, daca folosesti SQLite, ai nevoie de persistent disk montat la `/var/data`.
