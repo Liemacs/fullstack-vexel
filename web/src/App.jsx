@@ -16,7 +16,6 @@ import { Shell } from './components/Shell'
 import { cardWear } from './utils/cardWear'
 import {
   codeRules,
-  contracts,
   anthemAudio,
   leadershipCards,
   mapPoints,
@@ -166,6 +165,46 @@ function usePositions() {
   return positions
 }
 
+function useApiContracts() {
+  const [contracts, setContracts] = useState([])
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch(`${API_BASE_URL}/contracts`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Contracts request failed')
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return
+        }
+
+        setContracts(Array.isArray(data) ? data : [])
+        setStatus('ready')
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setContracts([])
+        setStatus('error')
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { contracts, status }
+}
+
 function upsertMember(members, member) {
   const exists = members.some((item) => item.nickname === member.nickname)
 
@@ -212,6 +251,7 @@ function getRoute() {
 function App() {
   const [route, setRoute] = useState(getRoute)
   const { members, status: membersStatus, setMembers } = useApiMembers()
+  const { contracts, status: contractsStatus } = useApiContracts()
   const positions = usePositions()
   const [authToken, setAuthToken] = useState(storedMemberToken)
   const [currentMember, setCurrentMember] = useState(null)
@@ -386,6 +426,8 @@ function App() {
           page={route.page}
           members={members}
           membersStatus={membersStatus}
+          contracts={contracts}
+          contractsStatus={contractsStatus}
           positions={positions}
           authStatus={authStatus}
           authError={authError}
@@ -403,6 +445,8 @@ function Page({
   page,
   members,
   membersStatus,
+  contracts,
+  contractsStatus,
   positions,
   authStatus,
   authError,
@@ -433,7 +477,7 @@ function Page({
         />
       )
     case 'contracts':
-      return <ContractsPage />
+      return <ContractsPage contracts={contracts} status={contractsStatus} />
     case 'map':
       return <MapPage />
     case 'gear':
@@ -904,7 +948,7 @@ function PeoplePage({ members, status }) {
   )
 }
 
-function ContractsPage() {
+function ContractsPage({ contracts, status }) {
   return (
     <section className="site-section">
       <SectionHeader
@@ -917,6 +961,16 @@ function ContractsPage() {
           <ContractCard key={contract.number} contract={contract} />
         ))}
       </div>
+      {status === 'ready' && contracts.length === 0 ? (
+        <Panel seed="contracts-empty" className="mt-6">
+          <p className="font-lore text-stone-400">Контрактов пока нет.</p>
+        </Panel>
+      ) : null}
+      {status === 'error' ? (
+        <Panel seed="contracts-error" className="mt-6">
+          <p className="font-lore text-stone-400">Не удалось загрузить контракты.</p>
+        </Panel>
+      ) : null}
     </section>
   )
 }
