@@ -31,6 +31,7 @@ import {
 const API_BASE_URL = window.__VEXEL_CONFIG__?.API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
 const API_ORIGIN = new URL(API_BASE_URL, window.location.origin).origin
 const MEMBER_TOKEN_KEY = 'vexel_member_token'
+const UNKNOWN_MEMBER_IMAGE = '/images/members/unknown.webp'
 
 function storedMemberToken() {
   try {
@@ -40,9 +41,9 @@ function storedMemberToken() {
   }
 }
 
-function backendAssetUrl(value) {
+function backendAssetUrl(value, fallback = placeholderImage) {
   if (!value) {
-    return placeholderImage
+    return fallback
   }
 
   if (/^https?:\/\//.test(value)) {
@@ -74,7 +75,7 @@ function normalizeMember(member) {
     role: member.role ?? member.position?.name ?? '',
     position,
     specialization: member.specialization ?? '',
-    image: backendAssetUrl(member.image),
+    image: backendAssetUrl(member.image, UNKNOWN_MEMBER_IMAGE),
     quote: member.quote ?? '',
     bio: member.bio ?? '',
     skills: Array.isArray(member.skills) ? member.skills : [],
@@ -227,6 +228,47 @@ function useApiContracts(authToken) {
   return { contracts, status }
 }
 
+function useOverview() {
+  const [overview, setOverview] = useState({
+    members: 0,
+    activeContracts: 0,
+  })
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch(`${API_BASE_URL}/overview`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Overview request failed')
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return
+        }
+
+        setOverview({
+          members: Number(data.members ?? 0),
+          activeContracts: Number(data.active_contracts ?? 0),
+        })
+      })
+      .catch(() => {
+        if (isMounted) {
+          setOverview({ members: 0, activeContracts: 0 })
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return overview
+}
+
 function upsertMember(members, member) {
   const exists = members.some((item) => item.nickname === member.nickname)
 
@@ -280,6 +322,7 @@ function App() {
   const { members, status: membersStatus, setMembers } = useApiMembers(authToken)
   const { contracts, status: contractsStatus } = useApiContracts(authToken)
   const positions = usePositions(authToken)
+  const overview = useOverview()
 
   useEffect(() => {
     const onPopState = () => setRoute(getRoute())
@@ -452,6 +495,7 @@ function App() {
           contracts={contracts}
           contractsStatus={contractsStatus}
           positions={positions}
+          overview={overview}
           authStatus={authStatus}
           authError={authError}
           currentMember={currentMember}
@@ -472,6 +516,7 @@ function Page({
   contracts,
   contractsStatus,
   positions,
+  overview,
   authStatus,
   authError,
   currentMember,
@@ -511,7 +556,7 @@ function Page({
       return <CodePage />
     case 'home':
     default:
-      return <HomePage />
+      return <HomePage overview={overview} />
   }
 }
 
@@ -594,7 +639,13 @@ function AnthemButton() {
   )
 }
 
-function HomePage() {
+function HomePage({ overview }) {
+  const stats = [
+    ['99.7', 'канал'],
+    [String(overview.activeContracts).padStart(2, '0'), 'контрактов'],
+    [String(overview.members).padStart(2, '0'), 'досье'],
+  ]
+
   return (
     <>
       <section className="hero-section">
@@ -629,11 +680,7 @@ function HomePage() {
           <div className="grid gap-4">
             <TerminalPanel lines={terminalLines} />
             <div className="grid grid-cols-3 gap-3">
-              {[
-                ['99.7', 'канал'],
-                ['04', 'контрактов'],
-                ['07', 'досье'],
-              ].map(([value, label]) => (
+              {stats.map(([value, label]) => (
                 <div key={label} className="border border-stone-800 bg-black/55 p-4 text-center">
                   <p className="font-display text-4xl text-amber-200">{value}</p>
                   <p className="text-xs uppercase text-stone-500">{label}</p>
