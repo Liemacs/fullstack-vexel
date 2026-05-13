@@ -10,6 +10,7 @@ import {
 import { CharacterCard, ContractCard, VehicleGroup } from './components/Cards'
 import { CharacterProfile } from './components/CharacterProfile'
 import { DataIcon, Panel, SectionHeader, Tag, TerminalPanel } from './components/Interface'
+import { MemberPortal } from './components/MemberPortal'
 import { RegionMap } from './components/RegionMap'
 import { Shell } from './components/Shell'
 import { cardWear } from './utils/cardWear'
@@ -19,7 +20,6 @@ import {
   anthemAudio,
   leadershipCards,
   mapPoints,
-  members,
   navItems,
   placeholderImage,
   principles,
@@ -30,6 +30,160 @@ import {
 } from './data/vexelData'
 
 const API_BASE_URL = window.__VEXEL_CONFIG__?.API_BASE_URL ?? import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1'
+const API_ORIGIN = new URL(API_BASE_URL, window.location.origin).origin
+const MEMBER_TOKEN_KEY = 'vexel_member_token'
+
+function storedMemberToken() {
+  try {
+    return window.localStorage.getItem(MEMBER_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+function backendAssetUrl(value) {
+  if (!value) {
+    return placeholderImage
+  }
+
+  if (/^https?:\/\//.test(value)) {
+    return value
+  }
+
+  if (value.startsWith('/uploads/')) {
+    return `${API_ORIGIN}${value}`
+  }
+
+  return value
+}
+
+function normalizeMember(member) {
+  const position = member.position
+    ? {
+        ...member.position,
+        image: backendAssetUrl(member.position.image),
+      }
+    : null
+
+  return {
+    slug: member.slug,
+    nickname: member.nickname ?? '',
+    name: member.name ?? '',
+    callSign: member.callSign ?? '',
+    age: member.age ?? '',
+    status: member.status ?? '',
+    role: member.role ?? member.position?.name ?? '',
+    position,
+    specialization: member.specialization ?? '',
+    image: backendAssetUrl(member.image),
+    quote: member.quote ?? '',
+    bio: member.bio ?? '',
+    skills: Array.isArray(member.skills) ? member.skills : [],
+    gear: Array.isArray(member.gear) ? member.gear : [],
+    character: member.character ?? '',
+    vexelHistory: member.vexelHistory ?? '',
+    connections: Array.isArray(member.connections) ? member.connections : [],
+  }
+}
+
+function normalizePosition(position) {
+  return {
+    ...position,
+    image: backendAssetUrl(position.image),
+  }
+}
+
+function useApiMembers() {
+  const [members, setMembers] = useState([])
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch(`${API_BASE_URL}/members`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Members request failed')
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return
+        }
+
+        setMembers(Array.isArray(data) ? data.map(normalizeMember) : [])
+        setStatus('ready')
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setMembers([])
+        setStatus('error')
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return { members, status, setMembers }
+}
+
+function usePositions() {
+  const [positions, setPositions] = useState([])
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch(`${API_BASE_URL}/positions`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Positions request failed')
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (isMounted) {
+          setPositions(Array.isArray(data) ? data.map(normalizePosition) : [])
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPositions([])
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return positions
+}
+
+function upsertMember(members, member) {
+  const exists = members.some((item) => item.nickname === member.nickname)
+
+  if (!exists) {
+    return [...members, member]
+  }
+
+  return members.map((item) => (item.nickname === member.nickname ? member : item))
+}
+
+async function apiMessage(response) {
+  try {
+    const data = await response.json()
+    return data.message ?? 'Не удалось выполнить запрос.'
+  } catch {
+    return 'Не удалось выполнить запрос.'
+  }
+}
 
 function getRoute() {
   const legacyHash = window.location.hash.replace(/^#\/?/, '')
@@ -57,6 +211,12 @@ function getRoute() {
 
 function App() {
   const [route, setRoute] = useState(getRoute)
+  const { members, status: membersStatus, setMembers } = useApiMembers()
+  const positions = usePositions()
+  const [authToken, setAuthToken] = useState(storedMemberToken)
+  const [currentMember, setCurrentMember] = useState(null)
+  const [authStatus, setAuthStatus] = useState(authToken ? 'loading' : 'guest')
+  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
     const onPopState = () => setRoute(getRoute())
@@ -93,17 +253,164 @@ function App() {
     window.scrollTo({ top: 0, left: 0 })
   }, [route.page, route.slug])
 
+  useEffect(() => {
+    if (!authToken) {
+      setCurrentMember(null)
+      setAuthStatus('guest')
+      return undefined
+    }
+
+    let isMounted = true
+    setAuthStatus('loading')
+    setAuthError('')
+
+    fetch(`${API_BASE_URL}/member/me`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(await apiMessage(response))
+        }
+
+        return response.json()
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return
+        }
+
+        const member = normalizeMember(data.member)
+        setCurrentMember(member)
+        setMembers((current) => upsertMember(current, member))
+        setAuthStatus('authenticated')
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        window.localStorage.removeItem(MEMBER_TOKEN_KEY)
+        setAuthToken(null)
+        setCurrentMember(null)
+        setAuthError(error.message)
+        setAuthStatus('guest')
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [authToken, setMembers])
+
+  async function handleMemberLogin(credentials) {
+    setAuthStatus('submitting')
+    setAuthError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/member/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      })
+
+      if (!response.ok) {
+        throw new Error(await apiMessage(response))
+      }
+
+      const data = await response.json()
+      const member = normalizeMember(data.member)
+
+      window.localStorage.setItem(MEMBER_TOKEN_KEY, data.token)
+      setAuthToken(data.token)
+      setCurrentMember(member)
+      setMembers((current) => upsertMember(current, member))
+      setAuthStatus('authenticated')
+    } catch (error) {
+      setAuthError(error.message)
+      setAuthStatus('guest')
+    }
+  }
+
+  async function handleMemberSave(payload) {
+    if (!authToken) {
+      setAuthError('Требуется вход участника.')
+      return
+    }
+
+    setAuthError('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/member/me`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: payload,
+      })
+
+      if (!response.ok) {
+        throw new Error(await apiMessage(response))
+      }
+
+      const data = await response.json()
+      const member = normalizeMember(data.member)
+
+      setCurrentMember(member)
+      setMembers((current) => upsertMember(current, member))
+    } catch (error) {
+      setAuthError(error.message)
+    }
+  }
+
+  async function handleMemberLogout() {
+    if (authToken) {
+      await fetch(`${API_BASE_URL}/member/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).catch(() => {})
+    }
+
+    window.localStorage.removeItem(MEMBER_TOKEN_KEY)
+    setAuthToken(null)
+    setCurrentMember(null)
+    setAuthError('')
+    setAuthStatus('guest')
+  }
+
   const activePage = route.page === 'profile' ? 'people' : route.page
   const profile = route.page === 'profile' ? members.find((member) => member.slug === route.slug) : null
 
   return (
     <Shell activePage={activePage}>
-      {route.page === 'profile' && profile ? <CharacterProfile member={profile} /> : <Page page={route.page} />}
+      {route.page === 'profile' ? (
+        <ProfilePage profile={profile} status={membersStatus} />
+      ) : (
+        <Page
+          page={route.page}
+          members={members}
+          membersStatus={membersStatus}
+          positions={positions}
+          authStatus={authStatus}
+          authError={authError}
+          currentMember={currentMember}
+          onMemberLogin={handleMemberLogin}
+          onMemberLogout={handleMemberLogout}
+          onMemberSave={handleMemberSave}
+        />
+      )}
     </Shell>
   )
 }
 
-function Page({ page }) {
+function Page({
+  page,
+  members,
+  membersStatus,
+  positions,
+  authStatus,
+  authError,
+  currentMember,
+  onMemberLogin,
+  onMemberLogout,
+  onMemberSave,
+}) {
   switch (page) {
     case 'history':
       return <HistoryPage />
@@ -112,7 +419,19 @@ function Page({ page }) {
     case 'structure':
       return <StructurePage />
     case 'people':
-      return <PeoplePage />
+      return <PeoplePage members={members} status={membersStatus} />
+    case 'login':
+      return (
+        <MemberPortal
+          authStatus={authStatus}
+          error={authError}
+          member={currentMember}
+          positions={positions}
+          onLogin={onMemberLogin}
+          onLogout={onMemberLogout}
+          onSave={onMemberSave}
+        />
+      )
     case 'contracts':
       return <ContractsPage />
     case 'map':
@@ -125,6 +444,28 @@ function Page({ page }) {
     default:
       return <HomePage />
   }
+}
+
+function ProfilePage({ profile, status }) {
+  if (profile) {
+    return <CharacterProfile member={profile} />
+  }
+
+  return (
+    <section className="site-section">
+      <Panel seed="profile-empty">
+        <p className="kicker">database</p>
+        <h2 className="mt-3 font-display text-5xl uppercase text-stone-100">
+          {status === 'loading' ? 'Загрузка досье' : 'Досье не найдено'}
+        </h2>
+        <p className="mt-4 font-lore text-base leading-8 text-stone-400">
+          {status === 'error'
+            ? 'Не удалось получить данные участников из backend. Проверьте, что Laravel API запущен.'
+            : 'Участник появится здесь после добавления в dashboard.'}
+        </p>
+      </Panel>
+    </section>
+  )
 }
 
 function AnthemButton() {
@@ -179,7 +520,7 @@ function HomePage() {
 
         <div className="relative mx-auto grid min-h-[86svh] max-w-7xl items-end gap-10 px-4 pb-10 pt-16 sm:px-6 lg:grid-cols-[1.1fr_0.75fr] lg:px-8">
           <div className="pb-8">
-            <p className="kicker">внутренняя база / channel 13</p>
+            <p className="kicker">внутренняя база / channel 99.7</p>
             <h1 className="mt-4 font-display text-7xl uppercase leading-none text-stone-100 sm:text-9xl">
               Вексель
             </h1>
@@ -205,7 +546,7 @@ function HomePage() {
             <TerminalPanel lines={terminalLines} />
             <div className="grid grid-cols-3 gap-3">
               {[
-                ['13', 'канал'],
+                ['99.7', 'канал'],
                 ['04', 'контрактов'],
                 ['07', 'досье'],
               ].map(([value, label]) => (
@@ -523,7 +864,7 @@ function StructurePage() {
   )
 }
 
-function PeoplePage() {
+function PeoplePage({ members, status }) {
   return (
     <section className="site-section">
       <SectionHeader
@@ -531,11 +872,34 @@ function PeoplePage() {
         title="Люди Векселя"
         text="Каждое досье хранит роль, навыки, связи и историю внутри группы."
       />
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {members.map((member) => (
-          <CharacterCard key={member.slug} member={member} />
-        ))}
-      </div>
+      {status === 'loading' ? (
+        <Panel seed="people-loading">
+          <p className="font-lore text-sm leading-7 text-stone-500">Загрузка участников из базы данных...</p>
+        </Panel>
+      ) : null}
+      {status === 'error' ? (
+        <Panel seed="people-error">
+          <p className="font-lore text-sm leading-7 text-red-300">
+            Не удалось получить участников из backend. Проверьте, что Laravel API запущен.
+          </p>
+        </Panel>
+      ) : null}
+      {status === 'ready' && members.length === 0 ? (
+        <Panel seed="people-empty">
+          <p className="kicker">database</p>
+          <h3 className="mt-3 font-display text-5xl uppercase text-stone-100">Участников пока нет</h3>
+          <p className="mt-4 font-lore text-base leading-8 text-stone-400">
+            Создайте участника в dashboard, и он появится на этой странице автоматически.
+          </p>
+        </Panel>
+      ) : null}
+      {members.length > 0 ? (
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {members.map((member) => (
+            <CharacterCard key={member.slug} member={member} />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }

@@ -13,11 +13,13 @@ export function CharacterProfile({ member }) {
             <ArrowLeft className="h-4 w-4" />
             Люди Векселя
           </a>
-          <p className="kicker">личное досье / {member.callSign}</p>
+          <p className="kicker">личное досье{member.callSign ? ` / ${member.callSign}` : ''}</p>
           <h1 className="mt-3 font-display text-6xl uppercase text-stone-100 sm:text-8xl">
             {member.name}
           </h1>
-          <p className="mt-4 max-w-2xl font-lore text-lg leading-8 text-stone-300">{member.quote}</p>
+          {member.quote ? (
+            <p className="mt-4 max-w-2xl font-lore text-lg leading-8 text-stone-300">{member.quote}</p>
+          ) : null}
         </div>
       </section>
 
@@ -30,8 +32,8 @@ export function CharacterProfile({ member }) {
                 ['Имя', member.name],
                 ['Возраст', member.age],
                 ['Статус', member.status],
-                ['Профессия', member.role],
-              ].map(([label, value]) => (
+                ['Должность', member.role],
+              ].filter(([, value]) => value).map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between gap-4 border-b border-stone-800 pb-3">
                   <span className="text-stone-500">{label}</span>
                   <span className="text-right text-stone-100">{value}</span>
@@ -41,69 +43,85 @@ export function CharacterProfile({ member }) {
           </Panel>
 
           <div className="grid gap-6">
-            <Panel seed={`profile-${member.slug}-bio`}>
-              <p className="kicker">bio</p>
-              <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">Биография</h2>
-              <p className="mt-4 font-lore text-base leading-8 text-stone-400">{member.bio}</p>
-            </Panel>
+            {member.bio ? (
+              <Panel seed={`profile-${member.slug}-bio`}>
+                <p className="kicker">bio</p>
+                <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">Биография</h2>
+                <p className="mt-4 font-lore text-base leading-8 text-stone-400">{member.bio}</p>
+              </Panel>
+            ) : null}
 
-            <Panel seed={`profile-${member.slug}-skills`}>
-              <p className="kicker">skills</p>
-              <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">Навыки</h2>
-              <div className="mt-6 grid gap-4">
-                {member.skills.map((skill) => (
-                  <div key={skill.name}>
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="text-stone-300">{skill.name}</span>
-                      <span className="font-mono text-amber-300">{skill.value}%</span>
+            {member.skills.length ? (
+              <Panel seed={`profile-${member.slug}-skills`}>
+                <p className="kicker">skills</p>
+                <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">Навыки</h2>
+                <div className="mt-6 grid gap-4">
+                  {member.skills.map((skill) => (
+                    <div key={skill.name}>
+                      <div className="mb-2 flex justify-between text-sm">
+                        <span className="text-stone-300">{skill.name}</span>
+                        <span className="font-mono text-amber-300">{skill.value}%</span>
+                      </div>
+                      <div className="h-2 bg-stone-900">
+                        <div className="h-full bg-gradient-to-r from-amber-500 to-orange-300" style={{ width: `${skill.value}%` }} />
+                      </div>
                     </div>
-                    <div className="h-2 bg-stone-900">
-                      <div className="h-full bg-gradient-to-r from-amber-500 to-orange-300" style={{ width: `${skill.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
+                  ))}
+                </div>
+              </Panel>
+            ) : null}
           </div>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <Panel seed={`profile-${member.slug}-gear`}>
-            <ShieldCheck className="h-6 w-6 text-amber-300" />
-            <h2 className="mt-4 font-display text-3xl uppercase text-stone-100">Снаряжение</h2>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {member.gear.map((item) => (
-                <Tag key={item}>{item}</Tag>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel seed={`profile-${member.slug}-character`}>
-            <Radio className="h-6 w-6 text-amber-300" />
-            <h2 className="mt-4 font-display text-3xl uppercase text-stone-100">Характер</h2>
-            <p className="mt-4 font-lore text-sm leading-7 text-stone-400">{member.character}</p>
-          </Panel>
-
-          <Panel seed={`profile-${member.slug}-position`}>
-            <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
-            <div className="mt-5 grid gap-2">
-              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
-                {member.role}
+          {member.gear.length ? (
+            <Panel seed={`profile-${member.slug}-gear`}>
+              <ShieldCheck className="h-6 w-6 text-amber-300" />
+              <h2 className="mt-4 font-display text-3xl uppercase text-stone-100">Снаряжение</h2>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {member.gear.map((item) => (
+                  <Tag key={item}>{item}</Tag>
+                ))}
               </div>
-              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
-                {member.specialization}
+            </Panel>
+          ) : null}
+
+          {member.character ? (
+            <Panel seed={`profile-${member.slug}-character`}>
+              <Radio className="h-6 w-6 text-amber-300" />
+              <h2 className="mt-4 font-display text-3xl uppercase text-stone-100">Характер</h2>
+              <p className="mt-4 font-lore text-sm leading-7 text-stone-400">{member.character}</p>
+            </Panel>
+          ) : null}
+
+          {member.role || member.position?.image ? (
+            <Panel seed={`profile-${member.slug}-position`}>
+              <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
+              {member.position?.image ? (
+                <img
+                  src={member.position.image}
+                  alt={member.role}
+                  className="mt-5 aspect-[16/9] w-full object-cover grayscale"
+                />
+              ) : null}
+              <div className="mt-5 grid gap-2">
+                {member.role ? (
+                  <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
+                    {member.role}
+                  </div>
+                ) : null}
               </div>
-            </div>
-          </Panel>
+            </Panel>
+          ) : null}
         </div>
 
-        <div className="mt-6">
+        {member.vexelHistory ? <div className="mt-6">
           <Panel seed={`profile-${member.slug}-history`}>
             <p className="kicker">history</p>
             <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">История в Векселе</h2>
             <p className="mt-4 font-lore text-sm leading-7 text-stone-400">{member.vexelHistory}</p>
           </Panel>
-        </div>
+        </div> : null}
       </section>
     </div>
   )

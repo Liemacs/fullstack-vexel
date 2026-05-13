@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\MapPoint;
 use App\Models\Member;
+use App\Models\Position;
 use App\Models\TimelineEvent;
 use App\Models\VehicleCategory;
+use App\Support\MemberPayload;
 use Illuminate\Http\JsonResponse;
 
 class VexelController extends Controller
@@ -33,13 +35,25 @@ class VexelController extends Controller
     public function members(): JsonResponse
     {
         return response()->json(
-            Member::query()->orderBy('id')->get()->map(fn (Member $member): array => $this->formatMember($member))
+            Member::query()->with('position')->orderBy('id')->get()->map(fn (Member $member): array => MemberPayload::format($member))
         );
     }
 
     public function member(Member $member): JsonResponse
     {
-        return response()->json($this->formatMember($member));
+        $member->load('position');
+
+        return response()->json(MemberPayload::format($member));
+    }
+
+    public function positions(): JsonResponse
+    {
+        return response()->json(
+            Position::query()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'image'])
+        );
     }
 
     public function contracts(): JsonResponse
@@ -105,26 +119,5 @@ class VexelController extends Controller
                     ])->values(),
                 ])
         );
-    }
-
-    private function formatMember(Member $member): array
-    {
-        return [
-            'slug' => $member->slug,
-            'name' => $member->name,
-            'callSign' => $member->call_sign,
-            'age' => $member->age,
-            'status' => $member->status,
-            'role' => $member->role,
-            'specialization' => $member->specialization,
-            'image' => $member->image,
-            'quote' => $member->quote,
-            'bio' => $member->bio,
-            'skills' => $member->skills,
-            'gear' => $member->gear,
-            'character' => $member->character,
-            'vexelHistory' => $member->vexel_history,
-            'connections' => $member->connections,
-        ];
     }
 }

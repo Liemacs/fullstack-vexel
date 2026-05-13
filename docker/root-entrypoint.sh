@@ -1,7 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
-mkdir -p /var/data storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+mkdir -p /var/data/uploads storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+rm -rf public/uploads
+ln -s /var/data/uploads public/uploads
 
 APP_NAME_VALUE="${APP_NAME:-Vexel API}"
 APP_ENV_VALUE="${APP_ENV:-production}"
@@ -62,7 +64,7 @@ window.__VEXEL_CONFIG__ = {
 }
 EOF
 
-chown -R www-data:www-data /var/data storage bootstrap/cache public/config.js .env
+chown -R www-data:www-data /var/data storage bootstrap/cache public/config.js public/uploads .env
 
 php artisan config:clear --no-interaction
 php artisan route:clear --no-interaction

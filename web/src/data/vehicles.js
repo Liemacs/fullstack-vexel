@@ -27,7 +27,7 @@ export const vehicles = [
     category: 'Радиостанции',
     icon: 'Radio',
     items: [
-      { name: 'Channel-13', status: 'активно', text: 'Основной внутренний канал Векселя.' },
+      { name: 'Channel-99.7', status: 'активно', text: 'Основной внутренний канал Векселя.' },
       { name: 'Шифроблок Salt', status: 'закрыто', text: 'Короткие ключи для ночных выходов.' },
     ],
   },

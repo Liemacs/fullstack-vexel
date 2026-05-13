@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Dashboard\MemberController;
+use App\Http\Controllers\Dashboard\PositionController;
 use App\Http\Controllers\Dashboard\TimelineController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +14,8 @@ Route::get('/dashboard/health', function () {
 })->name('dashboard.health');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::resource('/dashboard/positions', PositionController::class)->names('dashboard.positions')->except(['show']);
+Route::resource('/dashboard/members', MemberController::class)->names('dashboard.members')->except(['show']);
 Route::prefix('/dashboard/timeline')->name('dashboard.timeline.')->group(function (): void {
     Route::get('/', [TimelineController::class, 'index'])->name('index');
     Route::get('/create', [TimelineController::class, 'create'])->name('create');

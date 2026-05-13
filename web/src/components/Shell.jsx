@@ -95,7 +95,7 @@ export function Shell({ activePage, children }) {
 
       <footer className="relative z-10 border-t border-stone-800 bg-[#0b0b0b] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>ВЕКСЕЛЬ / ВНУТРЕННИЙ АРХИВ / CHANNEL 13</span>
+          <span>ВЕКСЕЛЬ / ВНУТРЕННИЙ АРХИВ / CHANNEL 99.7</span>
           <span>Задача должна быть оплачена.</span>
         </div>
       </footer>

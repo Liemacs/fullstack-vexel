@@ -5,7 +5,8 @@ export const navItems = [
   { id: 'structure', label: 'Структура' },
   { id: 'people', label: 'Люди' },
   { id: 'contracts', label: 'Контракты' },
-  { id: 'map', label: 'Карта' },
+  // { id: 'map', label: 'Карта' },
   { id: 'gear', label: 'Техника' },
   { id: 'code', label: 'Кодекс' },
+  { id: 'login', label: 'Кабинет' },
 ]

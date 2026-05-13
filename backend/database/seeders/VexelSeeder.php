@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Contract;
 use App\Models\MapPoint;
 use App\Models\Member;
+use App\Models\Position;
 use App\Models\TimelineEvent;
 use App\Models\VehicleCategory;
 use Illuminate\Database\Seeder;
@@ -23,6 +24,7 @@ class VexelSeeder extends Seeder
         MapPoint::query()->delete();
         Contract::query()->delete();
         Member::query()->delete();
+        Position::query()->delete();
 
         DB::statement('PRAGMA foreign_keys = ON');
     }

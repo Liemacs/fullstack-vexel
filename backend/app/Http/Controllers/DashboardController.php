@@ -40,7 +40,8 @@ class DashboardController extends Controller
     {
         return [
             ['key' => 'dashboard', 'label' => 'Панель', 'href' => route('dashboard'), 'description' => 'Обзор backend'],
-            ['key' => 'members', 'label' => 'Участники', 'href' => route('dashboard.page', 'members'), 'description' => 'CRUD для участников'],
+            ['key' => 'positions', 'label' => 'Должности', 'href' => route('dashboard.positions.index'), 'description' => 'CRUD для должностей'],
+            ['key' => 'members', 'label' => 'Участники', 'href' => route('dashboard.members.index'), 'description' => 'CRUD для участников'],
             ['key' => 'contracts', 'label' => 'Контракты', 'href' => route('dashboard.page', 'contracts'), 'description' => 'CRUD для контрактов'],
             ['key' => 'vehicles', 'label' => 'Транспорт', 'href' => route('dashboard.page', 'vehicles'), 'description' => 'CRUD для транспорта'],
             ['key' => 'map-points', 'label' => 'Точки карты', 'href' => route('dashboard.page', 'map-points'), 'description' => 'CRUD для зон'],

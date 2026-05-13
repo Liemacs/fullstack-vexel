@@ -28,6 +28,11 @@ class DashboardTest extends TestCase
         $this->get('/dashboard/members')
             ->assertOk()
             ->assertSee('Участники')
-            ->assertSee('Страница подготовлена для CRUD');
+            ->assertSee('Создать участника');
+
+        $this->get('/dashboard/positions')
+            ->assertOk()
+            ->assertSee('Должности')
+            ->assertSee('Создать должность');
     }
 }

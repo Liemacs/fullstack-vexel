@@ -26,20 +26,21 @@ export function CharacterCard({ member }) {
           className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent" />
-        <Tag tone={member.status === 'Активен' || member.status === 'Активна' ? 'green' : 'amber'}>
-          {member.status}
-        </Tag>
+        {member.status ? (
+          <Tag tone={member.status === 'Активен' || member.status === 'Активна' ? 'green' : 'amber'}>
+            {member.status}
+          </Tag>
+        ) : null}
       </div>
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="font-display text-3xl uppercase text-stone-100">{member.name}</h3>
-            <p className="text-sm uppercase text-amber-300">{member.callSign}</p>
+            {member.callSign ? <p className="text-sm uppercase text-amber-300">{member.callSign}</p> : null}
           </div>
           <UserRound className="mt-1 h-5 w-5 text-stone-500 transition group-hover:text-amber-300" />
         </div>
-        <p className="mt-4 font-lore text-sm text-stone-400">{member.role}</p>
-        <p className="mt-2 font-lore text-sm text-stone-500">{member.specialization}</p>
+        {member.role ? <p className="mt-4 font-lore text-sm text-stone-400">{member.role}</p> : null}
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold uppercase text-amber-300">
           Досье <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
         </span>

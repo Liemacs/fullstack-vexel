@@ -13,5 +13,6 @@ backend/storage/framework/sessions/
 backend/storage/framework/views/
 backend/storage/logs/
 backend/database/database.sqlite
+backend/public/uploads/
 
 .DS_Store
