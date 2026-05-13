@@ -278,7 +278,7 @@
                 <h1>Панель управления</h1>
                 <p class="muted">Административная панель, подготовленная для CRUD-модулей.</p>
             </div>
-            <a class="button" href="/api/v1/health">Статус API</a>
+            <a class="button" href="{{ route('dashboard.health') }}">Статус API</a>
         </header>
 
         <section class="stats" aria-label="Статистика">

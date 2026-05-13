@@ -4,12 +4,12 @@ use App\Http\Controllers\Dashboard\TimelineController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+Route::get('/dashboard/health', function () {
     return response()->json([
         'service' => 'vexel-api',
         'status' => 'ok',
     ]);
-});
+})->name('dashboard.health');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::prefix('/dashboard/timeline')->name('dashboard.timeline.')->group(function (): void {
@@ -23,5 +23,9 @@ Route::prefix('/dashboard/timeline')->name('dashboard.timeline.')->group(functio
 Route::get('/dashboard/{section}', [DashboardController::class, 'page'])->name('dashboard.page');
 
 Route::fallback(function () {
+    if (! file_exists(public_path('index.html'))) {
+        return response('<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Vexel</title></head><body><h1>Vexel</h1><p>Frontend build is not available in this environment.</p></body></html>');
+    }
+
     return response()->file(public_path('index.html'));
 });
