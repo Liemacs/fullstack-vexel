@@ -15,6 +15,8 @@ export APP_KEY="${APP_KEY:-base64:$(php -r 'echo base64_encode(random_bytes(32))
 export REQUIRE_PERSISTENT_SQLITE="${REQUIRE_PERSISTENT_SQLITE:-true}"
 
 if [ "${APP_ENV}" = "production" ] && [ "${DB_CONNECTION}" = "sqlite" ] && [ "${REQUIRE_PERSISTENT_SQLITE}" = "true" ]; then
+ 
+
   case "${DB_DATABASE}" in
     "${PERSISTENT_DATA_PATH}"/*) ;;
     *)

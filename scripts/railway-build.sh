@@ -15,14 +15,5 @@ npm install --include=optional --legacy-peer-deps
 npm run build
 cd ..
 
-rm -rf \
-  backend/public/_redirects \
-  backend/public/assets \
-  backend/public/audio \
-  backend/public/config.js \
-  backend/public/favicon.svg \
-  backend/public/icons.svg \
-  backend/public/images \
-  backend/public/index.html \
-  backend/public/*.mp3
+rm -rf backend/public/assets backend/public/index.html backend/public/config.js
 cp -R web/dist/. backend/public/

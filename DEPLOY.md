@@ -55,7 +55,11 @@ DB_DATABASE=/var/data/database.sqlite
 
 Volume-ul poate ramane numit `vexel-vexel-sqlite`; numele lui din Railway nu conteaza. Important este mount path-ul `/var/data`.
 
-In productie, scriptul refuza sa porneasca daca SQLite nu este configurat in volumul persistent. Asta previne cazul periculos in care Railway porneste aplicatia pe storage efemer si creeaza o baza de date noua, goala.
+Cand volume-ul este atasat, Railway seteaza automat variabila `RAILWAY_VOLUME_MOUNT_PATH`. Scriptul foloseste aceasta variabila ca sursa principala pentru `PERSISTENT_DATA_PATH`.
+
+In productie, scriptul refuza sa porneasca daca Railway nu expune `RAILWAY_VOLUME_MOUNT_PATH` sau daca SQLite nu este configurat in volumul persistent. Asta previne cazul periculos in care Railway porneste aplicatia pe storage efemer si creeaza o baza de date noua, goala.
+
+Daca vrei doar sa pornesti temporar aplicatia fara persistenta, poti seta `REQUIRE_PERSISTENT_SQLITE=false`, dar datele SQLite se vor pierde la redeploy.
 
 ## Ce a fost scos
 
