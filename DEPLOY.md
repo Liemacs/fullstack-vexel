@@ -1,62 +1,65 @@
 # Deploy pe Railway
 
-Proiectul ruleaza ca un singur serviciu Docker:
+Proiectul este configurat fara Docker. Railway foloseste `railway.json` si scripturile din `scripts/`.
 
-- Laravel API + dashboard
-- frontend Vite build-uit static in `public/`
-- baza de date intr-un serviciu separat PostgreSQL
+## Cum ruleaza
 
-## Railway
+Build:
 
-1. Creeaza un serviciu din repository pentru aplicatie.
-2. Creeaza un serviciu separat `PostgreSQL` in acelasi project Railway.
-3. In serviciul aplicatiei, adauga variabila:
-
-```txt
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+```bash
+./scripts/railway-build.sh
 ```
 
-Numele `Postgres` trebuie sa fie exact numele serviciului PostgreSQL din Railway. Daca Railway ti-a creat DB-ul cu alt nume, foloseste acel nume in loc de `Postgres`.
+Scriptul instaleaza dependintele Laravel, construieste frontend-ul Vite si copiaza `web/dist` in `backend/public`.
 
-Variabile recomandate pentru aplicatie:
+Start:
+
+```bash
+./scripts/railway-start.sh
+```
+
+Scriptul seteaza Laravel pe SQLite, creeaza automat fisierul DB daca lipseste, ruleaza migrarile si porneste serverul pe portul primit de la Railway.
+
+## Variabile Railway
+
+Pentru aplicatie lasa:
 
 ```txt
-APP_NAME=Vexel API
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://vexel-production.up.railway.app
-APP_KEY=base64:...
-DATABASE_URL=${{Postgres.DATABASE_URL}}
 API_BASE_URL=/api/v1
 LOG_CHANNEL=stderr
+DB_CONNECTION=sqlite
+DB_DATABASE=/var/data/database.sqlite
 ```
 
-Nu seta `DB_CONNECTION=sqlite` pe Railway. Daca exista `DATABASE_URL`, containerul seteaza automat Laravel pe `pgsql`.
+Recomandat:
 
-Containerul ruleaza automat:
-
-```bash
-php artisan migrate --force
+```txt
+APP_KEY=base64:...
 ```
 
-Nu ruleaza `seed`, `migrate:fresh` sau alte comenzi care sterg datele.
+Daca nu setezi `APP_KEY`, scriptul genereaza una la pornire, dar sesiunile se pot invalida la redeploy.
 
-## Date persistente
+## Persistenta SQLite
 
-Baza de date este persistenta in serviciul PostgreSQL Railway, nu in containerul aplicatiei. Redeploy-ul aplicatiei nu sterge datele din PostgreSQL.
+Pentru ca datele sa nu dispara la redeploy, pastreaza Railway Volume-ul atasat la aplicatie:
 
-Atentie: fisierele uploadate local in container pot fi efemere pe Railway. Pentru imagini persistente pe termen lung, foloseste un Railway Volume montat la `/var/data` sau un storage extern.
-
-## Local cu Docker Compose
-
-```bash
-docker compose up --build
+```txt
+Mount Path: /var/data
+DB_DATABASE=/var/data/database.sqlite
 ```
 
-Configuratia locala foloseste tot PostgreSQL separat, cu volum Docker `postgres-data`.
+Volume-ul poate ramane numit `vexel-vexel-sqlite`; numele lui din Railway nu conteaza. Important este mount path-ul `/var/data`.
 
-## Config din repository
+## Ce a fost scos
 
-Repo-ul contine `railway.json`, care spune Railway sa foloseasca Dockerfile-ul din root.
+Au fost eliminate fisierele Docker:
 
-Repo-ul nu mai contine variabile SQLite implicite in Dockerfile si nu mai contine `render.yaml`. Variabilele vechi afisate in Railway trebuie sterse manual din dashboard daca au fost deja importate in serviciu.
+- `Dockerfile`
+- `backend/Dockerfile`
+- `docker-compose.yml`
+- `.dockerignore`
+- scripturile `docker/`
+
+Railway nu mai trebuie setat pe Dockerfile builder.

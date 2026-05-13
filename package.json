@@ -1,0 +1,11 @@
+{
+  "name": "vexel-railway-root",
+  "private": true,
+  "scripts": {
+    "build": "./scripts/railway-build.sh",
+    "start": "./scripts/railway-start.sh"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

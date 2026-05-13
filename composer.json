@@ -1,0 +1,10 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "vexel/railway-root",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*"
+    }
+}
