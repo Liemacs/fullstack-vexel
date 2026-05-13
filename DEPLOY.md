@@ -55,6 +55,8 @@ docker compose up --build
 
 Configuratia locala foloseste tot PostgreSQL separat, cu volum Docker `postgres-data`.
 
-## Render legacy
+## Config din repository
 
-Configuratia `render.yaml` ramane pentru Render. Pe Render, daca folosesti SQLite, ai nevoie de persistent disk montat la `/var/data`.
+Repo-ul contine `railway.json`, care spune Railway sa foloseasca Dockerfile-ul din root.
+
+Repo-ul nu mai contine variabile SQLite implicite in Dockerfile si nu mai contine `render.yaml`. Variabilele vechi afisate in Railway trebuie sterse manual din dashboard daca au fost deja importate in serviciu.
