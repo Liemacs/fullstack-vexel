@@ -61,6 +61,25 @@ In productie, scriptul refuza sa porneasca daca Railway nu expune `RAILWAY_VOLUM
 
 Daca vrei doar sa pornesti temporar aplicatia fara persistenta, poti seta `REQUIRE_PERSISTENT_SQLITE=false`, dar datele SQLite se vor pierde la redeploy.
 
+## Creare volume prin CLI
+
+Railway nu permite crearea unui Volume din `railway.json`. Volume-ul este o resursa separata a proiectului. Pentru a-l crea si conecta la service-ul aplicatiei, poti folosi scriptul:
+
+```bash
+npm i -g @railway/cli
+railway login
+railway link
+sh scripts/railway-setup-volume.sh
+```
+
+Implicit scriptul foloseste service-ul `rp-vexel` si mount path-ul `/var/data`. Daca service-ul are alt nume/id:
+
+```bash
+RAILWAY_SERVICE=service-id-sau-nume sh scripts/railway-setup-volume.sh
+```
+
+Dupa rulare, in Railway trebuie sa vezi un Volume atasat la service-ul aplicatiei. Apoi apasa `Deploy` / `Apply changes`.
+
 ## Ce a fost scos
 
 Au fost eliminate fisierele Docker:
