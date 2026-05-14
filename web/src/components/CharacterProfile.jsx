@@ -3,7 +3,7 @@ import { Panel, Tag } from './Interface'
 
 function ArchiveTextBox({ children, className = '' }) {
   return (
-    <div className={`mt-5 max-h-[520px] overflow-y-auto border border-stone-700/70 bg-black/45 px-6 py-5 font-mono text-base leading-8 text-stone-200 whitespace-pre-line shadow-[inset_0_0_32px_rgba(0,0,0,0.45)] sm:text-lg sm:leading-9 ${className}`}>
+    <div className={`archive-text-scroll mt-5 max-h-[520px] overflow-y-auto border border-stone-700/70 bg-black/45 px-6 py-5 font-mono text-base leading-8 text-stone-200 whitespace-pre-line shadow-[inset_0_0_32px_rgba(0,0,0,0.45)] sm:text-lg sm:leading-9 ${className}`}>
       {children}
     </div>
   )
