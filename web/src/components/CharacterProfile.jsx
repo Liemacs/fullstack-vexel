@@ -1,6 +1,14 @@
 import { ArrowLeft, Radio, ShieldCheck } from 'lucide-react'
 import { Panel, Tag } from './Interface'
 
+function ArchiveTextBox({ children, className = '' }) {
+  return (
+    <div className={`mt-5 max-h-[520px] overflow-y-auto border border-stone-700/70 bg-black/45 px-6 py-5 font-mono text-base leading-8 text-stone-200 whitespace-pre-line shadow-[inset_0_0_32px_rgba(0,0,0,0.45)] sm:text-lg sm:leading-9 ${className}`}>
+      {children}
+    </div>
+  )
+}
+
 export function CharacterProfile({ member, showSensitive = false }) {
   return (
     <div>
@@ -47,7 +55,7 @@ export function CharacterProfile({ member, showSensitive = false }) {
               <Panel seed={`profile-${member.slug}-bio`}>
                 <p className="kicker">bio</p>
                 <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">Биография</h2>
-                <p className="mt-4 font-lore text-base leading-8 text-stone-400">{member.bio}</p>
+                <ArchiveTextBox>{member.bio}</ArchiveTextBox>
               </Panel>
             ) : null}
 
@@ -112,24 +120,21 @@ export function CharacterProfile({ member, showSensitive = false }) {
                 ) : null}
               </div>
             </Panel>
-          ) : <Panel seed={`profile-${member.slug}-position`}>
-          <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
-          
-          <div className="mt-5 grid gap-2">
-
-              <div className="border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
+          ) : (
+            <Panel seed={`profile-${member.slug}-position`}>
+              <h2 className="font-display text-3xl uppercase text-stone-100">Должность</h2>
+              <div className="mt-5 border-l-2 border-amber-400/40 bg-stone-950/60 px-3 py-2 text-sm text-stone-300">
                 Доступно только для участников Векселя
               </div>
-
-          </div>
-        </Panel>}
+            </Panel>
+          )}
         </div>
 
         {member.vexelHistory ? <div className="mt-6">
           <Panel seed={`profile-${member.slug}-history`}>
             <p className="kicker">history</p>
             <h2 className="mt-3 font-display text-4xl uppercase text-stone-100">История в Векселе</h2>
-            <p className="mt-4 font-lore text-sm leading-7 text-stone-400">{member.vexelHistory}</p>
+            <ArchiveTextBox>{member.vexelHistory}</ArchiveTextBox>
           </Panel>
         </div> : null}
       </section>
